@@ -8,6 +8,7 @@ import { AuthUser, CurrentUser } from '../common/decorators/current-user.decorat
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { PricingConfigController } from './config.controller';
 
 export const BASE_CURRENCY = 'CNY';
 
@@ -22,6 +23,12 @@ export interface Converter {
   rate: Prisma.Decimal;
   decimals: number;
   convert(amountCny: Prisma.Decimal.Value): Money;
+  /** CNY → target currency as a rounded Decimal (half-up at the currency's decimal places). */
+  convertDecimal(amountCny: Prisma.Decimal.Value): Prisma.Decimal;
+  /** Rounds an amount already in the target currency (half-up at the currency's decimal places). */
+  round(amount: Prisma.Decimal.Value): Prisma.Decimal;
+  /** Formats an amount in the target currency with the right number of decimals. */
+  format(amount: Prisma.Decimal.Value): Money;
 }
 
 @Injectable()
@@ -50,15 +57,10 @@ export class PricingService {
   }
 
   private build(currency: string, rate: Prisma.Decimal, decimals: number): Converter {
-    return {
-      currency,
-      rate,
-      decimals,
-      convert: (amountCny) => ({
-        amount: new Prisma.Decimal(amountCny).mul(rate).toDecimalPlaces(decimals, Prisma.Decimal.ROUND_HALF_UP).toFixed(decimals),
-        currency,
-      }),
-    };
+    const round = (v: Prisma.Decimal.Value) => new Prisma.Decimal(v).toDecimalPlaces(decimals, Prisma.Decimal.ROUND_HALF_UP);
+    const convertDecimal = (v: Prisma.Decimal.Value) => round(new Prisma.Decimal(v).mul(rate));
+    const format = (v: Prisma.Decimal.Value): Money => ({ amount: round(v).toFixed(decimals), currency });
+    return { currency, rate, decimals, convertDecimal, round, format, convert: (v) => format(convertDecimal(v)) };
   }
 }
 
@@ -111,5 +113,5 @@ export class PricingController {
 }
 
 @Global()
-@Module({ controllers: [PricingController], providers: [PricingService], exports: [PricingService] })
+@Module({ controllers: [PricingController, PricingConfigController], providers: [PricingService], exports: [PricingService] })
 export class PricingModule {}

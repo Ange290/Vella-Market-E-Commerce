@@ -68,8 +68,8 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 | 1 | Environment, DB schema, migrations, app shell | **done** |
 | 2 | Auth + OTP (register, verify, login, refresh rotation, reset, RBAC) | **done** (28 e2e tests) |
 | 3 | Catalogue (products, categories, variants, search/filter/sort/paginate, reviews, wishlist) | **done** (backend API, 48 e2e tests total) |
-| 4 | Pricing config + cart + checkout | next |
-| 5 | Orders + timeline | |
+| 4 | Pricing config + cart + checkout | **done** (64 e2e tests total) |
+| 5 | Orders + timeline | next |
 | 6 | Payments (Flutterwave sandbox, webhook, refunds) | |
 | 7 | Shipping + tracking | |
 | 8 | Sourcing requests + quotations | |
@@ -88,3 +88,23 @@ cd ../frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
 Note: host port 5433 is used because a native PostgreSQL service already occupied 5432 on the development machine.
+
+## Pricing formula (checkout quote and, in module 5, order creation)
+
+All amounts are in the charge currency, rounded half-up to that currency's decimals. Prices are held in CNY and converted once.
+
+```
+unit        = round(unitPriceCny × rate)            (variant price = base + priceDeltaCny)
+subtotal    = Σ unit × quantity
+shipping    = round( (baseFee + perKgFee × weightKg) → charge currency )   (rate band chosen by cart weight)
+serviceFee  = round(subtotal × service_fee_pct / 100)
+discount    = coupon on subtotal (never more than subtotal)
+tax(rule)   = round((subtotal + shipping + serviceFee − discount) × ratePct / 100)   per active TaxRule of the destination country
+total       = subtotal + shipping + serviceFee + Σ tax − discount
+```
+
+Quotes return HTTP 422 with a stable `code` when configuration is missing:
+`CURRENCY_UNAVAILABLE`, `SERVICE_FEE_NOT_CONFIGURED`, `NO_SHIPPING_RATE`, `SHIPPING_RATE_CURRENCY_UNAVAILABLE`,
+`PRODUCT_WEIGHT_MISSING`, `DESTINATION_NOT_SUPPORTED`. Stock/coupon problems are returned as `issues` (`canCheckout:false`).
+
+Admin setup order before the first order can be priced: currencies → exchange rates → `service_fee_pct` → shipping rates → tax rules.

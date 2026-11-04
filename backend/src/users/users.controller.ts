@@ -6,6 +6,7 @@ import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validato
 import { AuthUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { AddressesController } from './addresses.controller';
 
 class ListUsersQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page: number = 1;
@@ -59,5 +60,5 @@ export class UsersController {
   }
 }
 
-@Module({ controllers: [UsersController] })
+@Module({ controllers: [UsersController, AddressesController] })
 export class UsersModule {}
