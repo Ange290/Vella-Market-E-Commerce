@@ -10,6 +10,8 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ShipmentsModule } from './shipments/shipments.module';
 import { SourcingModule } from './sourcing/sourcing.module';
+import { AdminModule } from './admin/admin.module';
+import { ContentModule } from './content/content.module';
 import { PricingModule } from './pricing/pricing.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -41,6 +43,8 @@ import { UsersModule } from './users/users.controller';
     PaymentsModule,
     ShipmentsModule,
     SourcingModule,
+    AdminModule,
+    ContentModule,
   ],
   controllers: [HealthController],
   providers: [

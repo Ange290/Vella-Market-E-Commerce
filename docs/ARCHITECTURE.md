@@ -73,7 +73,7 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 | 6 | Payments (Flutterwave sandbox, webhook, refunds) | **done** (111 e2e tests total) |
 | 7 | Shipping + tracking | **done** |
 | 8 | Sourcing requests + quotations | **done** |
-| 9 | Admin dashboard (API + UI) | next |
+| 9 | Admin dashboard (API + UI) | **done** (backend API) |
 | 10 | Customer UI pages for every module | |
 | 11 | Tests, Swagger completeness, Dockerfiles, deployment guide | |
 
@@ -160,3 +160,19 @@ customer: POST /quotations/:id/accept {addressId}   →  Order(AWAITING_PAYMENT,
 ```
 Quotations are valid for at most 60 days; accepting is an atomic claim (only one acceptance can win) and refuses expired offers.
 A new sent quotation withdraws the previous live one. Customers have at most 10 open requests.
+
+## Admin & content API
+
+| Area | Endpoints | Access |
+|---|---|---|
+| Dashboard | `GET /admin/dashboard/summary`, `/charts?days=` | ADMIN + STAFF; **revenue/money is ADMIN-only**, reported per currency (gross, refunded, net) |
+| Customers | `GET /admin/customers[/:id]`, `PATCH /admin/customers/:id/status`, `GET …/spend` | list/detail ADMIN+STAFF; suspend & spend ADMIN (suspending revokes all sessions) |
+| Staff | `GET/POST /admin/staff`, `PATCH /admin/users/:id/role` (STAFF↔CUSTOMER), `PATCH /admin/staff/:id/status` | ADMIN. ADMIN accounts cannot be created or changed via the API |
+| Content | public `GET /content[/:slug]`; admin `GET/PUT/DELETE /admin/content/:slug` | edit ADMIN+STAFF, delete ADMIN. Bodies are inert text/Markdown — **never render as raw HTML** |
+| Promotions | public `GET /promotions`; admin CRUD `/admin/promotions` | links restricted to internal paths or http(s) |
+| Support | public `POST /support` (3/min); admin `GET/PATCH /admin/support` | ADMIN+STAFF |
+| Currencies | `GET/POST/PATCH /admin/currencies`, `GET /admin/exchange-rates` (history) | ADMIN writes; decimals immutable |
+| Moderation | `GET/PATCH /admin/reviews` | ADMIN+STAFF; ratings recomputed |
+| Audit | `GET /admin/audit-logs` | ADMIN |
+
+Backend roadmap complete. Remaining: customer & admin frontend, Dockerfiles / deployment guide.

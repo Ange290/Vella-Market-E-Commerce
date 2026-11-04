@@ -38,7 +38,7 @@ export async function createTestApp(configure?: (b: TestingModuleBuilder) => Tes
 
 export async function resetDb(prisma: PrismaService) {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "User","Product","Category","Supplier","Currency","ExchangeRate","ShippingRate","TaxRule","SystemSetting","Coupon","WebhookEvent","AuditLog" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "User","Product","Category","Supplier","Currency","ExchangeRate","ShippingRate","TaxRule","SystemSetting","Coupon","WebhookEvent","ContentPage","Promotion","SupportRequest","AuditLog" RESTART IDENTITY CASCADE',
   );
 }
 
