@@ -1,5 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { OtpPurpose, Role } from '@prisma/client';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
@@ -21,12 +21,11 @@ export class FakeMailService {
   }
 }
 
-export async function createTestApp() {
+export async function createTestApp(configure?: (b: TestingModuleBuilder) => TestingModuleBuilder) {
   const mail = new FakeMailService();
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-    .overrideProvider(MailService)
-    .useValue(mail)
-    .compile();
+  let builder = Test.createTestingModule({ imports: [AppModule] }).overrideProvider(MailService).useValue(mail);
+  if (configure) builder = configure(builder);
+  const moduleRef = await builder.compile();
   const app: INestApplication = moduleRef.createNestApplication();
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1');
@@ -39,7 +38,7 @@ export async function createTestApp() {
 
 export async function resetDb(prisma: PrismaService) {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "User","Product","Category","Supplier","Currency","ExchangeRate","ShippingRate","TaxRule","SystemSetting","Coupon","AuditLog" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "User","Product","Category","Supplier","Currency","ExchangeRate","ShippingRate","TaxRule","SystemSetting","Coupon","WebhookEvent","AuditLog" RESTART IDENTITY CASCADE',
   );
 }
 

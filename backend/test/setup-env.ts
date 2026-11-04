@@ -12,3 +12,5 @@ process.env.EMAIL_FROM = 'Vella Market <test@vellamarket.local>';
 process.env.SMS_PROVIDER = 'disabled';
 
 process.env.UPLOAD_DIR = 'uploads-test';
+process.env.PAYMENT_PROVIDER = 'mock';
+process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH = 'test-webhook-secret-hash-1234567890';

@@ -6,6 +6,8 @@ import { AuditModule } from './audit/audit.service';
 import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { CheckoutModule } from './checkout/checkout.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { PricingModule } from './pricing/pricing.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -33,6 +35,8 @@ import { UsersModule } from './users/users.controller';
     UsersModule,
     CatalogModule,
     CheckoutModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
   providers: [

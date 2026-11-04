@@ -28,6 +28,8 @@ const schema = z.object({
   TWILIO_AUTH_TOKEN: z.string().optional().default(''),
   TWILIO_FROM_NUMBER: z.string().optional().default(''),
 
+  PAYMENT_PROVIDER: z.enum(['disabled', 'flutterwave', 'mock']).default('disabled'),
+  FLUTTERWAVE_BASE_URL: z.string().url().default('https://api.flutterwave.com/v3'),
   FLUTTERWAVE_SECRET_KEY: z.string().optional().default(''),
   FLUTTERWAVE_PUBLIC_KEY: z.string().optional().default(''),
   FLUTTERWAVE_WEBHOOK_SECRET_HASH: z.string().optional().default(''),
@@ -42,6 +44,15 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
   const env = parsed.data;
+  if (env.NODE_ENV === 'production' && env.PAYMENT_PROVIDER === 'mock') {
+    throw new Error('PAYMENT_PROVIDER=mock is a development-only simulator and is not allowed in production');
+  }
+  if (env.PAYMENT_PROVIDER === 'flutterwave' && !(env.FLUTTERWAVE_SECRET_KEY && env.FLUTTERWAVE_WEBHOOK_SECRET_HASH)) {
+    throw new Error('FLUTTERWAVE_SECRET_KEY and FLUTTERWAVE_WEBHOOK_SECRET_HASH are required when PAYMENT_PROVIDER=flutterwave');
+  }
+  if (env.PAYMENT_PROVIDER === 'mock' && !env.FLUTTERWAVE_WEBHOOK_SECRET_HASH) {
+    throw new Error('FLUTTERWAVE_WEBHOOK_SECRET_HASH is required (it also signs mock webhooks)');
+  }
   if (env.NODE_ENV === 'production') {
     if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) {
       throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');

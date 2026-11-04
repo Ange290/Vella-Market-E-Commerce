@@ -8,7 +8,7 @@ import { CheckoutService } from './checkout.service';
 
 const upper = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim().toUpperCase() : value);
 
-class QuoteDto {
+export class QuoteDto {
   @IsString() addressId!: string;
   @IsEnum(DeliveryMethod) deliveryMethod!: DeliveryMethod;
   @IsOptional() @Transform(upper) @Matches(/^[A-Z]{3}$/) currency?: string;

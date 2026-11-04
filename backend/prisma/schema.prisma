@@ -69,6 +69,7 @@ enum DeliveryMethod {
 enum PaymentProvider {
   FLUTTERWAVE
   MANUAL
+  MOCK // development-only simulated gateway; refused in production
 }
 
 enum PaymentMethod {

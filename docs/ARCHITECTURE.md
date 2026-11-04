@@ -69,9 +69,9 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 | 2 | Auth + OTP (register, verify, login, refresh rotation, reset, RBAC) | **done** (28 e2e tests) |
 | 3 | Catalogue (products, categories, variants, search/filter/sort/paginate, reviews, wishlist) | **done** (backend API, 48 e2e tests total) |
 | 4 | Pricing config + cart + checkout | **done** (64 e2e tests total) |
-| 5 | Orders + timeline | next |
-| 6 | Payments (Flutterwave sandbox, webhook, refunds) | |
-| 7 | Shipping + tracking | |
+| 5 | Orders + timeline | **done** (82 e2e tests total) |
+| 6 | Payments (Flutterwave sandbox, webhook, refunds) | **done** (111 e2e tests total) |
+| 7 | Shipping + tracking | next |
 | 8 | Sourcing requests + quotations | |
 | 9 | Admin dashboard (API + UI) | |
 | 10 | Customer UI pages for every module | |
@@ -108,3 +108,35 @@ Quotes return HTTP 422 with a stable `code` when configuration is missing:
 `PRODUCT_WEIGHT_MISSING`, `DESTINATION_NOT_SUPPORTED`. Stock/coupon problems are returned as `issues` (`canCheckout:false`).
 
 Admin setup order before the first order can be priced: currencies → exchange rates → `service_fee_pct` → shipping rates → tax rules.
+
+## Order lifecycle
+
+```
+AWAITING_PAYMENT ──(payment verified, system)──▶ PAID ─▶ PROCESSING ─▶ PURCHASED_FROM_SUPPLIER ─▶ SHIPPED_FROM_CHINA
+      │                                                                        ─▶ ARRIVED_AT_DESTINATION_COUNTRY ─▶ OUT_FOR_DELIVERY ─▶ DELIVERED
+      └─▶ CANCELLED (customer or admin; restocks stock + releases coupon)           any paid state ─(refund, system)─▶ REFUNDED
+```
+- Admin/staff transitions: `ADMIN_TRANSITIONS` in `orders.service.ts`. PAID/REFUNDED are system-only (`system: true`), reserved for the payments module.
+- Customers can cancel only before payment. Paid orders are cancelled via the refund flow.
+- Order creation locks the cart row, re-validates it against the priced snapshot, decrements stock with an atomic `stock >= qty` update, and redeems the coupon with a guarded `UPDATE`, all in one transaction.
+- Order numbers (`VM-YYYYMMDD-XXXXXX`) are random, not sequential.
+
+## Payments
+
+`PaymentsService` talks only to the `PaymentGateway` interface (`src/payments/gateway.ts`). `PAYMENT_PROVIDER` selects the implementation:
+
+| Value | Behaviour |
+|---|---|
+| `disabled` (default) | Payment endpoints answer 503 `PAYMENTS_DISABLED`; nothing is faked. |
+| `flutterwave` | Real Flutterwave v3 (`flutterwave.gateway.ts`). Needs `FLUTTERWAVE_SECRET_KEY` + `FLUTTERWAVE_WEBHOOK_SECRET_HASH`. Unit-tested with mocked HTTP; **not yet run against the live sandbox** — do that first when keys are available. |
+| `mock` | Development simulator. Refused when `NODE_ENV=production`. Stays "pending" until you call `POST /api/v1/dev/payments/:reference/simulate {outcome}`, which then delivers a signed webhook through the real handler. |
+
+Flow: `POST /orders/:id/payments {method}` → provider checkout link → customer pays → webhook **and/or** `GET /payments/:reference/status` → `settle()`:
+1. the webhook signature (`verif-hash`) is checked in constant time; the event is stored once in `WebhookEvent` (replays are acknowledged and ignored);
+2. the body is only a hint — `settle()` asks the provider's API for the truth;
+3. amount and currency must exactly equal the order's; otherwise the payment is FAILED `AMOUNT_OR_CURRENCY_MISMATCH` and the order stays unpaid;
+4. only then is the payment marked SUCCESSFUL (guarded update + DB unique index: one successful payment per order) and the order moved to PAID.
+
+Duplicate protection: one live payment per order and method (reused for 30 min), `Idempotency-Key` header, row lock during initiation. A second successful payment (e.g. an older checkout link) or money arriving for a cancelled order becomes a `REQUESTED` refund for admins. Refunds: `POST /admin/payments/:id/refunds` (ADMIN), partial or full; a fully refunded payment moves the order to REFUNDED.
+
+Go-live checklist: set real keys, `PAYMENT_PROVIDER=flutterwave`, register `https://<api-host>/api/v1/payments/webhooks/flutterwave` and the same secret hash in the Flutterwave dashboard, run a sandbox payment per method (MTN, Airtel, card), confirm refunds.
