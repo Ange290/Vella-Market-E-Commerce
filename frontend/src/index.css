@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Vella Market brand */
+  --color-navy-950: #0a1a3a;
+  --color-navy-900: #0f2557;
+  --color-navy-800: #14307a;
+  --color-royal-700: #1d44b8;
+  --color-royal-600: #2455d6;
+  --color-royal-500: #3b6cf0;
+  --color-royal-100: #e3ebff;
+  --color-royal-50: #f1f5ff;
+  --color-accent-600: #ea6a0a;
+  --color-accent-500: #f97316;
+  --color-accent-100: #ffedd5;
+  --color-surface: #f6f7f9;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-white font-sans text-slate-800 antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-royal-500;
+  }
+}
