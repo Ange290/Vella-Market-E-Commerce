@@ -7,6 +7,6 @@ coverage/
 !.env.example
 *.log
 .DS_Store
-uploads/
+uploads*/
 .vite/
 *.tsbuildinfo

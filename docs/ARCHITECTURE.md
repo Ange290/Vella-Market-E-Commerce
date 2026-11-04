@@ -67,8 +67,8 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 |---|---|---|
 | 1 | Environment, DB schema, migrations, app shell | **done** |
 | 2 | Auth + OTP (register, verify, login, refresh rotation, reset, RBAC) | **done** (28 e2e tests) |
-| 3 | Catalogue (products, categories, variants, search/filter/sort/paginate, reviews, wishlist) | next |
-| 4 | Pricing config + cart + checkout | |
+| 3 | Catalogue (products, categories, variants, search/filter/sort/paginate, reviews, wishlist) | **done** (backend API, 48 e2e tests total) |
+| 4 | Pricing config + cart + checkout | next |
 | 5 | Orders + timeline | |
 | 6 | Payments (Flutterwave sandbox, webhook, refunds) | |
 | 7 | Shipping + tracking | |

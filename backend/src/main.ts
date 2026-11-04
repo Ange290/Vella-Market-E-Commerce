@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { UPLOAD_DIR } from './catalog/uploads.service';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
@@ -14,7 +15,9 @@ async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
 
   app.set('trust proxy', 1);
-  app.use(helmet());
+  // Uploaded product images are public and may be embedded by the (separate-origin) storefront.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.useStaticAssets(UPLOAD_DIR, { prefix: '/uploads', index: false, maxAge: '7d' });
   app.use(cookieParser());
   app.enableCors({
     origin: (process.env.CORS_ORIGINS ?? '')

@@ -10,3 +10,5 @@ process.env.OTP_RESEND_COOLDOWN_SECONDS = '0';
 process.env.OTP_MAX_ATTEMPTS = '3';
 process.env.EMAIL_FROM = 'Vella Market <test@vellamarket.local>';
 process.env.SMS_PROVIDER = 'disabled';
+
+process.env.UPLOAD_DIR = 'uploads-test';

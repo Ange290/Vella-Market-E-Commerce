@@ -1,7 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { OtpPurpose } from '@prisma/client';
+import { OtpPurpose, Role } from '@prisma/client';
 import cookieParser from 'cookie-parser';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { MailService } from '../src/mail/mail.service';
@@ -38,8 +39,27 @@ export async function createTestApp() {
 
 export async function resetDb(prisma: PrismaService) {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "RefreshToken","OTPVerification","AuditLog","Address","UserProfile","User" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "User","Product","Category","Supplier","Currency","ExchangeRate","AuditLog" RESTART IDENTITY CASCADE',
   );
+}
+
+/** Registers + verifies a customer, optionally promotes the role, and returns a bearer token. */
+export async function loginAs(
+  app: INestApplication,
+  prisma: PrismaService,
+  mail: FakeMailService,
+  role: Role = Role.CUSTOMER,
+  over: Record<string, unknown> = {},
+) {
+  const u = newUser(over);
+  await request(app.getHttpServer()).post('/api/v1/auth/register').send(u).expect(201);
+  await request(app.getHttpServer())
+    .post('/api/v1/auth/verify-otp')
+    .send({ email: u.email, code: mail.lastCode(u.email, OtpPurpose.REGISTRATION) })
+    .expect(200);
+  if (role !== Role.CUSTOMER) await prisma.user.update({ where: { email: u.email }, data: { role } });
+  const res = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ identifier: u.email, password: u.password }).expect(200);
+  return { user: u, id: res.body.user.id as string, token: res.body.accessToken as string };
 }
 
 let n = 0;
