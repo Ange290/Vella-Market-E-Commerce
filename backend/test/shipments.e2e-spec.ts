@@ -125,6 +125,14 @@ describe('Shipments & tracking (e2e)', () => {
       expect(mine[0]).not.toHaveProperty('cost'); // internal logistics cost is not exposed
       const viaOrder = (await http().get(`/api/v1/orders/${order.id}`).set(auth(shop.cust.token))).body;
       expect(viaOrder.shipments[0].events.length).toBe(3);
+      // internal logistics data never reaches customers through any order endpoint
+      for (const body of [viaOrder, (await http().get(`/api/v1/orders/by-number/${order.orderNumber}`).set(auth(shop.cust.token))).body]) {
+        expect(body.shipments[0]).not.toHaveProperty('cost');
+        expect(body.shipments[0]).not.toHaveProperty('costCurrency');
+        expect(body.shipments[0]).not.toHaveProperty('weightGrams');
+      }
+      const adminView = (await adminReq('get', `orders/${order.id}`).expect(200)).body;
+      expect(adminView.shipments[0]).toMatchObject({ cost: '59', costCurrency: 'CNY' }); // staff still see it
 
       await http().get(`/api/v1/orders/${order.id}/shipments`).set(auth(shop.other.token)).expect(404);
       await http().get(`/api/v1/orders/${order.id}/shipments`).expect(401);

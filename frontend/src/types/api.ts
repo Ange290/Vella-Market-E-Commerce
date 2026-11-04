@@ -153,3 +153,143 @@ export interface Cart {
   subtotal: Money | null
   currency: string | null
 }
+
+// ───────────── Buying flow ─────────────
+
+export interface Address {
+  id: string
+  label: string
+  recipientName: string
+  phone: string
+  country: string
+  region: string | null
+  city: string
+  street: string
+  postalCode: string | null
+  isDefault: boolean
+}
+
+export type DeliveryMethod = 'STANDARD' | 'EXPRESS' | 'AIR_FREIGHT' | 'SEA_FREIGHT' | 'PICKUP'
+
+export interface ShippingOption {
+  method: DeliveryMethod
+  available: boolean
+  fee: Money | null
+  estimatedDays?: { min: number | null; max: number | null }
+  reason?: string
+}
+
+export interface ShippingOptions {
+  country: string
+  weightGrams: number
+  currency: string
+  options: ShippingOption[]
+}
+
+export interface QuoteIssue {
+  code: string
+  message: string
+  itemId?: string
+}
+
+export interface Quote {
+  currency: string
+  exchangeRate: { from: string; to: string; rate: string }
+  lines: { itemId: string; name: string; sku: string; size: string | null; color: string | null; quantity: number; unitPrice: Money; lineTotal: Money }[]
+  breakdown: {
+    subtotal: Money
+    shipping: { label: string; amount: Money; weightGrams: number; estimatedDays: { min: number | null; max: number | null } }
+    serviceFee: { label: string; pct: string; amount: Money }
+    taxes: { label: string; ratePct: string; amount: Money }[]
+    discount: { code: string; amount: Money } | null
+    total: Money
+  }
+  issues: QuoteIssue[]
+  canCheckout: boolean
+}
+
+export type OrderStatus =
+  | 'PENDING'
+  | 'AWAITING_PAYMENT'
+  | 'PAID'
+  | 'PROCESSING'
+  | 'PURCHASED_FROM_SUPPLIER'
+  | 'SHIPPED_FROM_CHINA'
+  | 'ARRIVED_AT_DESTINATION_COUNTRY'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REFUNDED'
+
+export interface OrderListItem {
+  id: string
+  orderNumber: string
+  status: OrderStatus
+  currency: string
+  total: string
+  createdAt: string
+  itemCount: number
+  items: { name: string; imageUrl: string | null; quantity: number }[]
+}
+
+export interface TimelineEntry {
+  id: string
+  status: OrderStatus
+  description: string | null
+  trackingRef: string | null
+  createdAt: string
+}
+
+export type PaymentMethod = 'MTN_MOBILE_MONEY' | 'AIRTEL_MONEY' | 'CARD' | 'BANK_TRANSFER' | 'OTHER'
+export type PaymentStatus = 'INITIATED' | 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
+
+export interface Payment {
+  id: string
+  orderId: string
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: string
+  currency: string
+  reference: string
+  checkoutUrl: string | null
+  failureReason: string | null
+  paidAt: string | null
+  createdAt: string
+}
+
+export type ShipmentStatus = 'PENDING' | 'IN_TRANSIT' | 'CUSTOMS' | 'ARRIVED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'EXCEPTION'
+
+export interface Shipment {
+  id: string
+  carrier: string | null
+  trackingNumber: string | null
+  status: ShipmentStatus
+  originCountry: string
+  destinationCountry: string
+  estimatedDelivery: string | null
+  shippedAt: string | null
+  deliveredAt: string | null
+  events: { id: string; status: ShipmentStatus; location: string | null; description: string | null; occurredAt: string }[]
+}
+
+export interface OrderDetail {
+  id: string
+  orderNumber: string
+  status: OrderStatus
+  deliveryMethod: DeliveryMethod
+  currency: string
+  exchangeRate: string
+  subtotal: string
+  shippingFee: string
+  serviceFee: string
+  taxAmount: string
+  discountAmount: string
+  total: string
+  customerNote: string | null
+  createdAt: string
+  shippingAddress: { recipientName: string; phone: string; country: string; region: string | null; city: string; street: string; postalCode: string | null }
+  items: { id: string; name: string; sku: string; imageUrl: string | null; size: string | null; color: string | null; quantity: number; unitPrice: string; lineTotal: string }[]
+  history: TimelineEntry[]
+  payments: Pick<Payment, 'id' | 'method' | 'status' | 'amount' | 'currency' | 'reference' | 'paidAt' | 'createdAt'>[]
+  shipments: Shipment[]
+}

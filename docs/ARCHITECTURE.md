@@ -74,7 +74,7 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 | 7 | Shipping + tracking | **done** |
 | 8 | Sourcing requests + quotations | **done** |
 | 9 | Admin dashboard (API + UI) | **done** (backend API) |
-| 10 | Customer UI pages for every module | in progress. Done: foundation, auth, storefront (home, shop, search, categories, product, wishlist). Next: cart, checkout, orders, account, sourcing, static pages, admin UI |
+| 10 | Customer UI pages for every module | in progress. Done: foundation, auth, storefront, cart, checkout, payment return, orders, tracking. Next: account pages, sourcing, static pages, admin UI |
 | 11 | Tests, Swagger completeness, Dockerfiles, deployment guide | |
 
 ## Local development

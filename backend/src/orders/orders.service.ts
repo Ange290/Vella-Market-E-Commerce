@@ -61,7 +61,15 @@ const orderDetailInclude = {
   items: { orderBy: { createdAt: 'asc' as const } },
   history: { orderBy: { createdAt: 'asc' as const }, select: { id: true, status: true, description: true, trackingRef: true, createdAt: true } },
   payments: { orderBy: { createdAt: 'desc' as const }, select: { id: true, method: true, status: true, amount: true, currency: true, reference: true, paidAt: true, createdAt: true } },
-  shipments: { include: { events: { orderBy: { occurredAt: 'desc' as const } } }, orderBy: { createdAt: 'asc' as const } },
+  // Customers must not see internal logistics costs, so only safe fields are selected here (admins get the full rows in adminGet).
+  shipments: {
+    select: {
+      id: true, carrier: true, trackingNumber: true, status: true, originCountry: true, destinationCountry: true,
+      estimatedDelivery: true, shippedAt: true, deliveredAt: true,
+      events: { orderBy: [{ occurredAt: 'desc' as const }, { createdAt: 'desc' as const }], select: { id: true, status: true, location: true, description: true, occurredAt: true } },
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
 } satisfies Prisma.OrderInclude;
 
 @Injectable()
@@ -273,6 +281,7 @@ export class OrdersService {
       where: { id },
       include: {
         ...orderDetailInclude,
+        shipments: { include: { events: { orderBy: { occurredAt: 'desc' } } }, orderBy: { createdAt: 'asc' } },
         history: { orderBy: { createdAt: 'asc' }, include: { createdBy: { select: { id: true, profile: { select: { fullName: true } } } } } },
         user: { select: { id: true, email: true, phone: true, profile: { select: { fullName: true, country: true } } } },
         coupon: { select: { code: true } },

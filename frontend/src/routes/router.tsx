@@ -1,12 +1,19 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { GuestRoute, ProtectedRoute } from '@/components/ProtectedRoute'
 import { Layout } from '@/components/layout/Layout'
+import { CartPage } from '@/pages/CartPage'
 import { CategoriesPage, CategoryRedirect } from '@/pages/CategoriesPage'
+import { CheckoutPage } from '@/pages/CheckoutPage'
+import { DevMockPayPage } from '@/pages/DevMockPayPage'
 import { HomePage } from '@/pages/HomePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { OrderDetailPage } from '@/pages/OrderDetailPage'
+import { OrdersPage } from '@/pages/OrdersPage'
+import { PaymentReturnPage } from '@/pages/PaymentReturnPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 import { ProductDetailPage } from '@/pages/ProductDetailPage'
 import { ShopPage } from '@/pages/ShopPage'
+import { TrackPage } from '@/pages/TrackPage'
 import { WishlistPage } from '@/pages/WishlistPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -46,14 +53,16 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: 'wishlist', element: <WishlistPage /> },
-          { path: 'cart', element: placeholder('Shopping Cart') },
-          { path: 'checkout', element: placeholder('Checkout') },
+          { path: 'cart', element: <CartPage /> },
+          { path: 'checkout', element: <CheckoutPage /> },
+          { path: 'payment/return', element: <PaymentReturnPage /> },
           { path: 'account', element: placeholder('My Dashboard') },
-          { path: 'account/orders', element: placeholder('My Orders') },
-          { path: 'account/orders/:id', element: placeholder('Order Details') },
+          { path: 'account/orders', element: <OrdersPage /> },
+          { path: 'account/orders/:id', element: <OrderDetailPage /> },
           { path: 'account/profile', element: placeholder('My Profile') },
           { path: 'account/addresses', element: placeholder('Delivery Addresses') },
-          { path: 'track', element: placeholder('Order Tracking') },
+          { path: 'track', element: <TrackPage /> },
+          { path: 'track/:orderNumber', element: <TrackPage /> },
           { path: 'request-product', element: placeholder('Request a Product') },
         ],
       },
@@ -64,6 +73,9 @@ export const router = createBrowserRouter([
       { path: 'faq', element: placeholder('Frequently Asked Questions') },
       { path: 'terms', element: placeholder('Terms and Conditions') },
       { path: 'privacy', element: placeholder('Privacy Policy') },
+
+      // Simulated provider page: exists only in development builds (the mock gateway is refused in production).
+      ...(import.meta.env.DEV ? [{ path: 'dev/mock-pay', element: <DevMockPayPage /> }] : []),
 
       { path: '*', element: <NotFoundPage /> },
     ],
