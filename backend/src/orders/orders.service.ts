@@ -309,7 +309,7 @@ export class OrdersService {
   }
 
   /** Random, non-sequential, human-friendly reference such as VM-20261104-7K3QHD. */
-  private async newOrderNumber(): Promise<string> {
+  async newOrderNumber(): Promise<string> {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     for (let attempt = 0; attempt < 5; attempt++) {

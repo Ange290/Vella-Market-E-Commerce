@@ -17,6 +17,6 @@ import { UploadsService } from './uploads.service';
     WishlistController,
   ],
   providers: [ProductsService, UploadsService],
-  exports: [ProductsService],
+  exports: [ProductsService, UploadsService],
 })
 export class CatalogModule {}

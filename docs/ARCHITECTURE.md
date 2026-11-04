@@ -71,9 +71,9 @@ See `backend/prisma/schema.prisma` (36 models). Migrations:
 | 4 | Pricing config + cart + checkout | **done** (64 e2e tests total) |
 | 5 | Orders + timeline | **done** (82 e2e tests total) |
 | 6 | Payments (Flutterwave sandbox, webhook, refunds) | **done** (111 e2e tests total) |
-| 7 | Shipping + tracking | next |
-| 8 | Sourcing requests + quotations | |
-| 9 | Admin dashboard (API + UI) | |
+| 7 | Shipping + tracking | **done** |
+| 8 | Sourcing requests + quotations | **done** |
+| 9 | Admin dashboard (API + UI) | next |
 | 10 | Customer UI pages for every module | |
 | 11 | Tests, Swagger completeness, Dockerfiles, deployment guide | |
 
@@ -140,3 +140,23 @@ Flow: `POST /orders/:id/payments {method}` → provider checkout link → custom
 Duplicate protection: one live payment per order and method (reused for 30 min), `Idempotency-Key` header, row lock during initiation. A second successful payment (e.g. an older checkout link) or money arriving for a cancelled order becomes a `REQUESTED` refund for admins. Refunds: `POST /admin/payments/:id/refunds` (ADMIN), partial or full; a fully refunded payment moves the order to REFUNDED.
 
 Go-live checklist: set real keys, `PAYMENT_PROVIDER=flutterwave`, register `https://<api-host>/api/v1/payments/webhooks/flutterwave` and the same secret hash in the Flutterwave dashboard, run a sandbox payment per method (MTN, Airtel, card), confirm refunds.
+
+## Shipping & tracking
+
+Admins create shipments for paid orders that are in PROCESSING or later and append tracking events
+(`PENDING → IN_TRANSIT/CUSTOMS → ARRIVED → OUT_FOR_DELIVERY → DELIVERED`, `EXCEPTION` at any time; events cannot go backwards).
+The order follows its shipments: it reaches a stage only when **every** shipment has, stepping through each intermediate status so the
+customer timeline has no gaps. An open `EXCEPTION` holds the order back. Orders already further along (manual updates) are never moved backwards.
+Internal costs are not exposed to customers.
+
+## Sourcing requests & quotations
+
+```
+customer: POST /product-requests (link and/or photo)   →  SUBMITTED
+admin:    PATCH …/product-requests/:id {UNDER_REVIEW | REJECTED+reason, assignedToId}
+admin:    POST  …/product-requests/:id/quotations  (total computed on the server; send=true publishes)  →  request QUOTED
+customer: POST /quotations/:id/accept {addressId}   →  Order(AWAITING_PAYMENT, quotationId)  →  normal payment flow
+          POST /quotations/:id/reject               →  request back to UNDER_REVIEW for a new offer
+```
+Quotations are valid for at most 60 days; accepting is an atomic claim (only one acceptance can win) and refuses expired offers.
+A new sent quotation withdraws the previous live one. Customers have at most 10 open requests.

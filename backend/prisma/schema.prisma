@@ -116,6 +116,7 @@ enum ProductRequestStatus {
   REJECTED
   CONVERTED
   EXPIRED
+  CANCELLED
 }
 
 enum QuotationStatus {
