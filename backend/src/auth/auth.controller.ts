@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
+import { REFRESH_COOKIE, clearRefreshCookie, setRefreshCookie } from './cookie';
 import {
   ForgotPasswordDto,
   LoginDto,
@@ -14,9 +15,8 @@ import {
   ResetPasswordDto,
   VerifyOtpDto,
 } from './dto/auth.dto';
-import type { ClientContext, IssuedTokens } from './token.service';
+import type { ClientContext } from './token.service';
 
-export const REFRESH_COOKIE = 'vella_rt';
 const strict = { default: { limit: 5, ttl: 60_000 } };
 const moderate = { default: { limit: 10, ttl: 60_000 } };
 
@@ -39,7 +39,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify the registration OTP; activates the account and signs the user in' })
   async verifyOtp(@Body() dto: VerifyOtpDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, body } = await this.auth.verifyRegistration(dto.email, dto.code, this.ctx(req));
-    this.setCookie(res, tokens);
+    setRefreshCookie(res, tokens);
     return body;
   }
 
@@ -57,7 +57,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Log in with email or phone number and password' })
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, body } = await this.auth.login(dto.identifier, dto.password, this.ctx(req));
-    this.setCookie(res, tokens);
+    setRefreshCookie(res, tokens);
     return body;
   }
 
@@ -75,7 +75,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Log in with a one-time code' })
   async verifyLoginOtp(@Body() dto: LoginOtpVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, body } = await this.auth.verifyLoginOtp(dto.identifier, dto.code, this.ctx(req));
-    this.setCookie(res, tokens);
+    setRefreshCookie(res, tokens);
     return body;
   }
 
@@ -101,7 +101,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Rotate the refresh-token cookie and return a new access token' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, accessToken } = await this.auth.refresh(req.cookies?.[REFRESH_COOKIE], this.ctx(req));
-    this.setCookie(res, tokens);
+    setRefreshCookie(res, tokens);
     return { accessToken };
   }
 
@@ -110,7 +110,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke the current session' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await this.auth.logout(req.cookies?.[REFRESH_COOKIE]);
-    res.clearCookie(REFRESH_COOKIE, this.cookieBase());
+    clearRefreshCookie(res);
     return result;
   }
 
@@ -118,16 +118,4 @@ export class AuthController {
     return { ip: req.ip, userAgent: req.headers['user-agent'] };
   }
 
-  private cookieBase() {
-    return {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/api/v1/auth',
-    };
-  }
-
-  private setCookie(res: Response, tokens: IssuedTokens) {
-    res.cookie(REFRESH_COOKIE, tokens.refreshToken, { ...this.cookieBase(), expires: tokens.refreshExpiresAt });
-  }
 }

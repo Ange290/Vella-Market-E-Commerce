@@ -10,6 +10,7 @@
 import 'dotenv/config';
 import { PrismaClient, Role, UserStatus } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { CONTENT_DEFAULTS, PLACEHOLDER_MARKER } from './content-defaults';
 
 const prisma = new PrismaClient();
 
@@ -46,18 +47,12 @@ async function main() {
     });
   }
 
-  const pages = [
-    ['about', 'About Vella Market'],
-    ['faq', 'Frequently Asked Questions'],
-    ['terms', 'Terms and Conditions'],
-    ['privacy', 'Privacy Policy'],
-  ];
-  for (const [slug, title] of pages) {
-    await prisma.contentPage.upsert({
-      where: { slug },
-      update: {},
-      create: { slug, title, body: `# ${title}\n\nPlaceholder content — edit in the admin dashboard.` },
-    });
+  // Default page text. Existing pages are only replaced while they still contain the old placeholder,
+  // so edits made by admins are never overwritten.
+  for (const [slug, page] of Object.entries(CONTENT_DEFAULTS)) {
+    const existing = await prisma.contentPage.findUnique({ where: { slug } });
+    if (!existing) await prisma.contentPage.create({ data: { slug, ...page } });
+    else if (existing.body.includes(PLACEHOLDER_MARKER)) await prisma.contentPage.update({ where: { slug }, data: page });
   }
 
   const settings: Record<string, unknown> = {

@@ -154,6 +154,69 @@ export interface Cart {
   currency: string | null
 }
 
+// ───────────── Account, sourcing & content ─────────────
+
+export interface MeProfile {
+  id: string
+  email: string
+  phone: string | null
+  role: Role
+  status: string
+  createdAt: string
+  profile: { fullName: string; country: string; preferredCurrency: string; preferredLanguage: string; avatarUrl: string | null } | null
+}
+
+export interface NotificationItem {
+  id: string
+  type: 'ORDER' | 'PAYMENT' | 'SHIPMENT' | 'QUOTATION' | 'PROMOTION' | 'SYSTEM'
+  title: string
+  body: string
+  data: { orderId?: string; requestId?: string; quotationId?: string } | null
+  readAt: string | null
+  createdAt: string
+}
+
+export type RequestStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'QUOTED' | 'ACCEPTED' | 'REJECTED' | 'CONVERTED' | 'EXPIRED' | 'CANCELLED'
+export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+
+export interface QuotationItem {
+  id: string
+  requestId: string
+  productCost: string
+  shippingCost: string
+  serviceFee: string
+  taxAmount: string
+  total: string
+  currency: string
+  validUntil: string
+  notes: string | null
+  status: QuotationStatus
+  createdAt: string
+  order?: { id: string; orderNumber: string } | null
+}
+
+export interface ProductRequestItem {
+  id: string
+  productUrl: string | null
+  imageUrl: string | null
+  title: string | null
+  quantity: number
+  preferredSize: string | null
+  preferredColor: string | null
+  instructions: string | null
+  destinationCountry: string | null
+  status: RequestStatus
+  createdAt: string
+  quotations?: QuotationItem[]
+}
+
+export interface ContentPage {
+  slug: string
+  title: string
+  body: string
+  updatedAt: string
+}
+
 // ───────────── Buying flow ─────────────
 
 export interface Address {
